@@ -100,7 +100,7 @@ async function collectResource(mc, services, source, target, signal, log) {
         if (signal.aborted || err.message === 'annulé' || err.message.startsWith('aucun ')) throw err;
         // Déplacement raté (chemin, chunk non chargé…) : on compte l'échec et on réessaie.
         log.warn(`Déplacement de recherche échoué : ${err.message}`);
-        log.debug(err.stack);
+        log.warn(err.stack);
         fails += 1;
       }
       continue;
