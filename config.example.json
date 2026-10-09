@@ -1,0 +1,30 @@
+{
+  "bot": {
+    "username": "BestFriendBot",
+    "host": "localhost",
+    "port": 25565,
+    "version": "1.21.11",
+    "auth": "offline"
+  },
+  "behavior": {
+    "owner": "PLAYER_NAME",
+    "trusted": [],
+    "blocked": [],
+    "autoReconnect": true,
+    "reconnectBaseDelayMs": 2000,
+    "reconnectMaxDelayMs": 60000,
+    "autoEat": true,
+    "autoSleep": true,
+    "autoRespawn": true,
+    "lowHealthAlert": 6
+  },
+  "ai": {
+    "enabled": false,
+    "provider": "local",
+    "model": "MODEL_NAME"
+  },
+  "logging": {
+    "level": "INFO",
+    "file": "logs/jarvismc.log"
+  }
+}
