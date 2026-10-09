@@ -93,8 +93,16 @@ async function collectResource(mc, services, source, target, signal, log) {
 
     const block = findTargetBlock(mc, source, failed);
     if (!block) {
-      await moveForSearch(mc, source, trips, signal, log);
       trips += 1;
+      try {
+        await moveForSearch(mc, source, trips - 1, signal, log);
+      } catch (err) {
+        if (signal.aborted || err.message === 'annulé' || err.message.startsWith('aucun ')) throw err;
+        // Déplacement raté (chemin, chunk non chargé…) : on compte l'échec et on réessaie.
+        log.warn(`Déplacement de recherche échoué : ${err.message}`);
+        log.debug(err.stack);
+        fails += 1;
+      }
       continue;
     }
 
@@ -208,7 +216,10 @@ function createGatheringModule() {
                   actions: 0,
                   yield: 0,
                 });
-                if (err.message !== 'annulé') services.say(`Je n'ai pas pu finir : ${err.message}`);
+                if (err.message !== 'annulé') {
+                  log.error(`Récolte échouée : ${err.stack || err.message}`);
+                  services.say(`Je n'ai pas pu finir : ${err.message}`);
+                }
                 throw err;
               }
             }).catch(() => {});
