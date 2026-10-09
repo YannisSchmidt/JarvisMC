@@ -63,8 +63,16 @@ jobs:
       - name: Live integration tests
         run: npm run test:live
 
-      - name: Upload server and bot logs on failure
-        if: failure()
+      - name: Show bot and server logs
+        if: always()
+        run: |
+          echo "===== logs/live-test.log (fin) ====="
+          tail -n 300 logs/live-test.log 2>/dev/null || echo "(absent)"
+          echo "===== server/server.log (fin) ====="
+          tail -n 150 server/server.log 2>/dev/null || echo "(absent)"
+
+      - name: Upload server and bot logs
+        if: always()
         uses: actions/upload-artifact@v4
         with:
           name: live-logs
