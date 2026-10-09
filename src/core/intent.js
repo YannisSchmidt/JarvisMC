@@ -122,7 +122,7 @@ const NOT_IMPLEMENTED = [
   [/\b(ender|dragon)\b/, 'combattre l\'Ender Dragon'],
   [/\b(elytra|elytres?)\b/, 'obtenir une élytre'],
   [/\b(ferme|fermes|farm|farms)\b/, 'construire des fermes'],
-  [/\b(construis|construire|maison|pont|murs?|base)\b/, 'construire des structures'],
+  [/\b(murs?|fermes?)\b/, 'construire des murs'],
   [/\b(coffres?|range|rangement)\b/, 'ranger dans les coffres'],
   [/\b(redstone|piston|levier|comparateur|repeteur)\b/, 'construire des circuits redstone'],
   [/\b(echange|echanger|villageois|trader|troc)\b/, 'faire du commerce'],
@@ -175,6 +175,14 @@ function parseIntent(text, { username = null } = {}) {
   if (/\b(fais|faire|fabrique|fabriquer|craft|crafte|crafter|prepare)\b/.test(t)) {
     const item = findCraftItem(t);
     if (item) return { command: `!craft ${item} ${parseCount(t) || 1}` };
+  }
+
+  // Construction : maison simple devant le bot, pont jusqu'à une cible.
+  if (/\b(construis|construire|fais|fabrique)\b.*\b(maison|base|cabane|abri)\b|\b(maison|cabane|abri)\b.*\b(construis|construire)\b/.test(t)) {
+    return { command: '!build house' };
+  }
+  if (/\b(pont|passerelle)\b/.test(t) && coords) {
+    return { command: `!build bridge ${coords[1]} ${coords[2]} ${coords[3]}` };
   }
 
   // Récolte : bois, pierre, minerais.

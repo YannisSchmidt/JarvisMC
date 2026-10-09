@@ -11,6 +11,7 @@ const { createGatheringModule } = require('./gathering');
 const { createCraftingModule } = require('./crafting');
 const { createCombatModule } = require('./combat');
 const { createExplorationModule } = require('./exploration');
+const { createBuildingModule } = require('./building');
 
 /** L'ordre compte : gathering doit s'attacher avant crafting (services.gather). */
 function createModules() {
@@ -23,6 +24,7 @@ function createModules() {
     createCraftingModule(),
     createCombatModule(),
     createExplorationModule(),
+    createBuildingModule(),
   ];
 }
 

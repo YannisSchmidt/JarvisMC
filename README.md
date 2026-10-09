@@ -7,8 +7,9 @@ se déplace, inventorie, mange, se soigne et se reconnecte tout seul.
 > **Cible : Minecraft 1.21.1.** Le cœur, la navigation, la récolte (bois, pierre, minerais),
 > le craft avec fonte et tables, la défense, la mémoire et la compréhension de phrases simples
 > sont implémentés et couverts par des tests unitaires.
-> **Pas encore implémentés** : construction, fermes, redstone, commerce, villages/structures,
-> Ender Dragon, élytres, téléportation, rangement en coffres. Le bot le dit honnêtement au lieu de
+> **Construction** : maisons simples et ponts droits (plan généré par le code, pose vérifiée).
+> **Pas encore implémentés** : fermes, redstone, commerce, villages/structures,
+> Ender Dragon, élytres, téléportation, rangement en coffres, plans de construction complexes. Le bot le dit honnêtement au lieu de
 > prétendre agir. Les tests **sur un vrai serveur** n'ont pas encore été exécutés (voir §9).
 
 ---
@@ -95,6 +96,8 @@ Les commandes commencent par `!` et sont séparées du langage naturel. Dans le 
 | `!sleep` | Va dormir dans le lit le plus proche | TRUSTED |
 | `!setbase` / `!base` | Mémorise la base / y rentre | TRUSTED |
 | `!explore [points]` | Explore par points de passage (max 10) | TRUSTED |
+| `!build house` | Construit une maison 5×5×4 (sol, murs, porte, toit) devant le bot | TRUSTED |
+| `!build bridge <x> <y> <z>` | Pont droit en L jusqu'à la cible (max 64 blocs), tablier au niveau du sol | TRUSTED |
 | `!cancel` | Annule la tâche en cours | TRUSTED |
 | `!stop` / `!resume` | Arrête tout et met en pause / reprend | TRUSTED |
 | `!confirm` | Confirme une action dangereuse (délai 60 s) | TRUSTED |
@@ -110,6 +113,8 @@ ou répond honnêtement. Exemples reconnus :
 - « Fais-moi une pioche en diamant » → `!craft diamond_pickaxe 1`
 - « Fais une armure complète en diamant » → `!armor diamond`
 - « Trouve des diamants » → `!collect diamond 8`
+- « Construis-moi une maison ici » → `!build house`
+- « Construis un pont jusqu'à 10 64 -20 » → `!build bridge 10 64 -20`
 - « Suis-moi », « Défends-moi », « Va dormir », « Rentre à la base », « Arrête tout »
 
 Une phrase non comprise reçoit une demande de reformulation. Une phrase reconnue mais non
@@ -158,6 +163,9 @@ src/
     crafting.js       !craft et !armor
     combat.js         défense : cible choisie, jamais de joueur, fuite à PV bas
     exploration.js    base, recherche de blocs, exploration
+    building.js       !build house / bridge
+  (core) blueprint.js  plans : maison, pont, ordre des blocs, vérification
+  (core) builder.js    pose réelle : matériaux, face d'appui, pose vérifiée, réessais
 tests/
   unit/               configuration, versions, commandes, permissions, tâches, bot (sans serveur)
   integration/        adaptateur Mineflayer réel (reconnexion), test serveur réel optionnel
@@ -202,7 +210,7 @@ module.exports = { createMonModule };
 ## 9. Tests
 
 ```bash
-npm test                 # tous les tests (55 réussis, 1 ignoré sans serveur)
+npm test                 # tous les tests (62 réussis, 1 ignoré sans serveur)
 npm run test:unit        # unitaires (sans serveur)
 npm run test:integration # adaptateur Mineflayer réel + serveur réel optionnel
 npm run lint             # eslint (références non définies, variables inutiles)
@@ -229,9 +237,10 @@ JARVIS_TEST_SERVER=localhost:25565 JARVIS_TEST_VERSION=1.21.1 npm run test:integ
 ## 11. Feuille de route
 
 - **Fait** : phases 1 (cœur), 2 (minage, craft, combat, survie, exploration partielle),
+  5 (construction simple : maison et pont, vérifiée),
   3 (tâches, planification par étapes, récupération avec limite de réessais, vérification),
   4 (langage naturel déterministe), 6 (mémoire procédurale — enregistrée, pas encore exploitée
   pour optimiser automatiquement la récolte).
-- **Pas encore** : construction (blueprint, plans), fermes, Redstone, commerce, recherche de
+- **Pas encore** : plans de construction complexes et reproduction de structures, fermes, Redstone, commerce, recherche de
   villages/forteresses/stronghold, Ender Dragon, élytres, téléportation, rangement en coffres,
   compréhension libre du langage (LLM), apprentissage statistique avancé.

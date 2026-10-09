@@ -102,11 +102,14 @@ test('NL : phrases de la spécification → commandes', () => {
   assert.deepEqual(parseIntent('Va à 10 64 -20', ctx), { command: '!goto 10 64 -20' });
   assert.deepEqual(parseIntent('Trouve des diamants', ctx), { command: '!collect diamond 8' });
   assert.deepEqual(parseIntent('Arrête tout', ctx), { command: '!stop' });
+  assert.deepEqual(parseIntent('Construis-moi une maison ici', ctx), { command: '!build house' });
+  assert.deepEqual(parseIntent('Fais-moi une base', ctx), { command: '!build house' });
+  assert.deepEqual(parseIntent('Construis un pont jusqu\'à 10 64 -20', ctx), { command: '!build bridge 10 64 -20' });
   assert.deepEqual(parseIntent('Tu as quoi dans ton inventaire ?', ctx), { command: '!inventory' });
 });
 
 test('NL : phrases non implémentées → réponse honnête, jamais de fausse action', () => {
-  for (const phrase of ['Trouve-moi un village', 'Fais une ferme à fer', 'Construis-moi une maison ici', 'Range tout dans les coffres', 'Prépare tout pour aller tuer l\'Ender Dragon', 'Fais-moi une base', 'Fais ce qu\'il faut pour obtenir une Elytra']) {
+  for (const phrase of ['Trouve-moi un village', 'Fais une ferme à fer', 'Range tout dans les coffres', 'Prépare tout pour aller tuer l\'Ender Dragon', 'Fais ce qu\'il faut pour obtenir une Elytra']) {
     const r = parseIntent(phrase, ctx);
     assert.ok(r && r.reply && !r.command, `« ${phrase} » doit répondre sans commande : ${JSON.stringify(r)}`);
     assert.match(r.reply, /pas encore|pas implémenté|ne peux pas/i);
