@@ -210,16 +210,35 @@ module.exports = { createMonModule };
 ## 9. Tests
 
 ```bash
-npm test                 # tous les tests (62 réussis, 1 ignoré sans serveur)
+npm test                 # tous les tests unitaires et d'intégration (sans serveur)
 npm run test:unit        # unitaires (sans serveur)
-npm run test:integration # adaptateur Mineflayer réel + serveur réel optionnel
-npm run lint             # eslint (références non définies, variables inutiles)
+npm run test:integration # adaptateur Mineflayer réel
+npm run test:live        # scénario sur un serveur réel 1.21.1 (voir ci-dessous)
+npm run lint             # eslint
 ```
 
-Test sur un vrai serveur (mode offline) :
+### Tests sur serveur réel (GitHub Actions)
+
+Le workflow `.github/workflows/live-server.yml` télécharge le serveur officiel 1.21.1 (mode offline,
+difficulté paisible), le lance, puis exécute `npm run test:live` : connexion, `!status`, récolte de
+4 bûches, craft d'une pioche en bois, déplacement vérifié. Il tourne à chaque push et pull request.
+En cas d'échec, les logs du serveur et du bot sont joints à l'exécution (artifact `live-logs`).
+
+**Si les GitHub Actions ne se lancent pas** (onglet *Actions* vide ou message « Workflows disabled ») :
+
+1. Ouvrez le dépôt sur github.com, puis **Settings** → **Actions** → **General**.
+2. Dans *Actions permissions*, choisissez **Allow all actions and reusable workflows**, puis **Save**.
+3. Dans *Workflow permissions*, laissez **Read repository contents permission** (suffisant).
+4. Allez dans l'onglet **Actions**, cliquez sur le workflow *Live server tests*, puis **Run workflow**
+   si aucun run ne démarre automatiquement.
+
+Si le dépôt appartient à une organisation, les Actions peuvent aussi être bloquées au niveau de
+l'organisation : *Organization settings* → *Actions* → *Policies*.
+
+Sans accès aux Actions, lancez le test vous-même :
 
 ```bash
-JARVIS_TEST_SERVER=localhost:25565 JARVIS_TEST_VERSION=1.21.1 npm run test:integration
+JARVIS_TEST_SERVER=localhost:25565 JARVIS_TEST_VERSION=1.21.1 npm run test:live
 ```
 
 ## 10. Résolution des problèmes

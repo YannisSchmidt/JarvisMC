@@ -1,0 +1,74 @@
+name: Live server tests (Minecraft 1.21.1)
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  live:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    env:
+      MC_VERSION: "1.21.1"
+      JARVIS_TEST_SERVER: "localhost:25565"
+      JARVIS_TEST_VERSION: "1.21.1"
+      JARVIS_TEST_USERNAME: "JarvisTest"
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Download the official Minecraft server jar
+        run: |
+          set -euo pipefail
+          mkdir -p server && cd server
+          MANIFEST=$(curl -fsSL https://piston-meta.mojang.com/mc/game/version_manifest_v2.json)
+          VERSION_URL=$(echo "$MANIFEST" | jq -r --arg v "$MC_VERSION" '.versions[] | select(.id == $v) | .url')
+          test -n "$VERSION_URL"
+          SERVER_URL=$(curl -fsSL "$VERSION_URL" | jq -r '.downloads.server.url')
+          curl -fsSL -o server.jar "$SERVER_URL"
+          echo "eula=true" > eula.txt
+          printf '%s\n' \
+            'online-mode=false' 'server-port=25565' 'motd=JarvisMC CI' \
+            'difficulty=peaceful' 'gamemode=survival' 'spawn-protection=0' \
+            'max-players=5' 'view-distance=6' 'simulation-distance=6' > server.properties
+
+      - name: Start the server
+        run: |
+          cd server
+          nohup java -Xmx1536M -Xms1024M -jar server.jar nogui > server.log 2>&1 &
+          for i in $(seq 1 120); do
+            if grep -q 'Done (' server.log 2>/dev/null; then
+              echo "Server ready after ${i}s"; exit 0
+            fi
+            sleep 1
+          done
+          echo "Server did not start"; tail -n 100 server.log; exit 1
+
+      - name: Live integration tests
+        run: npm run test:live
+
+      - name: Upload server and bot logs on failure
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: live-logs
+          path: |
+            server/server.log
+            logs/
+          if-no-files-found: ignore
