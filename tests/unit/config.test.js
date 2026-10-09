@@ -10,7 +10,7 @@ const example = JSON.parse(fs.readFileSync(path.join(__dirname, '..', '..', 'con
 
 test('config.example.json est valide', () => {
   const cfg = normalizeConfig(example);
-  assert.equal(cfg.bot.version, '1.21.11');
+  assert.equal(cfg.bot.version, '1.21.1');
   assert.equal(cfg.behavior.owner, null, 'le placeholder PLAYER_NAME doit devenir null');
   assert.equal(cfg.ai.model, null, 'le placeholder MODEL_NAME doit devenir null');
 });

@@ -11,6 +11,7 @@ const { createModules } = require('../../src/modules');
 const { normalizeConfig } = require('../../src/config');
 const { resolveVersion } = require('../../src/adapters/version');
 const { configureLogger } = require('../../src/core/logger');
+const { MemoryStore } = require('../../src/memory/store');
 
 configureLogger({ level: 'ERROR', file: null });
 
@@ -28,14 +29,15 @@ function freePort() {
 test('connexion réelle refusée → reconnexions successives', async () => {
   const port = await freePort();
   const config = normalizeConfig({
-    bot: { host: '127.0.0.1', port, username: 'JarvisTest', version: '1.21.11' },
+    bot: { host: '127.0.0.1', port, username: 'JarvisTest', version: '1.21.1' },
     behavior: { owner: 'Yannis', reconnectBaseDelayMs: 20, reconnectMaxDelayMs: 40 },
     logging: { level: 'ERROR', file: null },
   });
   const jarvis = new JarvisBot({
     config,
-    versionProfile: resolveVersion('1.21.11'),
+    versionProfile: resolveVersion('1.21.1'),
     modules: createModules(),
+    memory: new MemoryStore(null),
   });
   let attempts = 0;
   const original = jarvis.connect.bind(jarvis);

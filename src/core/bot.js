@@ -10,6 +10,11 @@ const { roleOf, ROLES, hasRank } = require('./permissions');
 const { TaskManager } = require('./tasks');
 const { CommandRegistry } = require('./commands');
 const { createLogger } = require('./logger');
+const { getGameData } = require('../adapters/version');
+const { createCraftPlanner } = require('./crafting-planner');
+const { MemoryStore } = require('../memory/store');
+const { ConfirmationGate } = require('./safety');
+const { parseIntent } = require('./intent');
 
 const MAX_CHAT_LENGTH = 200;
 
@@ -35,12 +40,17 @@ class JarvisBot extends EventEmitter {
    * @param {Array}  deps.modules      modules { name, attach(mc, svc)=>cleanup, commands:[] }
    * @param {Function} [deps.createBot] fabrique (pour les tests)
    */
-  constructor({ config, versionProfile, modules = [], createBot = createMinecraftBot }) {
+  constructor({ config, versionProfile, modules = [], createBot = createMinecraftBot, memory = null }) {
     super();
     this.config = config;
     this.versionProfile = versionProfile;
     this.modules = modules;
     this.createBot = createBot;
+    this.data = getGameData(versionProfile.minecraftVersion);
+    this.planner = createCraftPlanner(this.data);
+    this.memory = memory || new MemoryStore(config.memory.file);
+    this.gate = new ConfirmationGate();
+    this.state = { defend: config.behavior.autoDefend };
     this.log = createLogger('BOT');
     this.commands = new CommandRegistry();
     this.tasks = new TaskManager({ log: createLogger('TASK') });
@@ -66,6 +76,12 @@ class JarvisBot extends EventEmitter {
       versionProfile: this.versionProfile,
       tasks: this.tasks,
       commands: this.commands,
+      data: this.data,
+      planner: this.planner,
+      memory: this.memory,
+      gate: this.gate,
+      state: this.state,
+      gather: null, // fourni par le module gathering au spawn
       log: createLogger('CORE'),
       say: (text) => this.say(text),
       getBot: () => this.mc,
@@ -87,13 +103,14 @@ class JarvisBot extends EventEmitter {
   /** Arrête le bot proprement : pas de reconnexion, annulation des tâches. */
   stop(reason = 'arrêt demandé') {
     this.stopping = true;
+    this.memory.save();
     clearTimeout(this.reconnectTimer);
     this.reconnectTimer = null;
     this.stopAll();
     if (this.mc) {
       try {
         this.mc.quit(reason);
-      } catch (_) {
+      } catch {
         /* déjà déconnecté */
       }
     }
@@ -121,7 +138,7 @@ class JarvisBot extends EventEmitter {
       this.mc.removeAllListeners('end');
       try {
         this.mc.quit('reconnexion');
-      } catch (_) {
+      } catch {
         /* ignore */
       }
       this._cleanupModules();
@@ -182,7 +199,7 @@ class JarvisBot extends EventEmitter {
     for (const cleanup of this.moduleCleanups.splice(0)) {
       try {
         cleanup();
-      } catch (_) {
+      } catch {
         /* un module ne doit pas bloquer la reconnexion */
       }
     }
@@ -227,16 +244,27 @@ class JarvisBot extends EventEmitter {
       return;
     }
     this.log.info(`[${role}] ${username}: ${message}`);
+    this.memory.seePlayer(username);
     const ctx = { username, role, bot: this.mc, connected: this.connected, jarvis: this, services: this.services, paused: this.paused };
     const result = await this.commands.execute(message, ctx);
     if (result.handled) {
       if (result.reply) this.say(result.reply);
       return;
     }
-    // Message en langage naturel : seul le propriétaire (ou un joueur de confiance) reçoit une réponse.
-    if (hasRank(role, ROLES.TRUSTED)) {
-      this.say(`Je ne comprends pas encore le langage naturel (IA : ${this.config.ai.enabled ? 'pas encore implémentée' : 'désactivée'}). Essayez !help.`);
+    // Langage naturel : réservé au propriétaire et aux joueurs de confiance.
+    if (!hasRank(role, ROLES.TRUSTED)) return;
+    const intent = parseIntent(message, { username });
+    if (!intent) {
+      this.say("Je n'ai pas compris. Essaie par exemple : « va chercher du bois », « fais une pioche en diamant », « suis-moi ». Ou !help.");
+      return;
     }
+    if (intent.reply) {
+      this.say(intent.reply);
+      return;
+    }
+    this.log.ai(`Intention « ${message} » → ${intent.command}`);
+    const routed = await this.commands.execute(intent.command, ctx);
+    if (routed.reply) this.say(routed.reply);
   }
 }
 
@@ -246,7 +274,7 @@ function formatReason(reason) {
     try {
       const parsed = JSON.parse(reason);
       return parsed.text || parsed.translate || reason;
-    } catch (_) {
+    } catch {
       return reason;
     }
   }

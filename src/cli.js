@@ -10,16 +10,23 @@ const { createLogger } = require('./core/logger');
 const { ROLES } = require('./core/permissions');
 
 const log = createLogger('CLI');
-const SHORTCUTS = new Set(['help', 'status', 'task', 'inventory', 'stop', 'resume', 'cancel', 'reconnect', 'quit', 'goto', 'follow']);
-
-/** Transforme une ligne saisie en message de commande ou null. */
-function toCommandLine(line) {
+/**
+ * Transforme une ligne saisie en message de commande ou null.
+ * @param {string} line
+ * @param {Set<string>} names  noms et alias des commandes enregistrées
+ */
+function toCommandLine(line, names) {
   const text = line.trim();
   if (!text) return null;
   if (text.startsWith('!')) return text;
   const first = text.split(/\s+/)[0].toLowerCase();
-  if (SHORTCUTS.has(first)) return '!' + text;
+  if (names.has(first)) return '!' + text;
   return null;
+}
+
+/** Noms et alias de toutes les commandes du registre. */
+function commandNames(registry) {
+  return new Set(registry.commands.keys());
 }
 
 function startCli(jarvis) {
@@ -31,7 +38,7 @@ function startCli(jarvis) {
       jarvis.say(text.slice(4));
       return;
     }
-    const command = toCommandLine(text);
+    const command = toCommandLine(text, commandNames(jarvis.commands));
     if (!command) {
       if (text) log.info('Commande inconnue. Tapez "help".');
       return;
@@ -54,4 +61,4 @@ function startCli(jarvis) {
   return rl;
 }
 
-module.exports = { startCli, toCommandLine };
+module.exports = { startCli, toCommandLine, commandNames };

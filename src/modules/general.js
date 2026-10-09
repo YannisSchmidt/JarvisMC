@@ -112,6 +112,41 @@ function createGeneralModule() {
         },
       },
       {
+        name: 'confirm',
+        aliases: ['confirmer', 'oui'],
+        minRole: 'TRUSTED',
+        needsBot: false,
+        usage: '!confirm',
+        description: 'Confirme la dernière action dangereuse demandée',
+        run(ctx) {
+          const pending = ctx.services.gate.take(ctx.username);
+          if (!pending) return 'Rien à confirmer (ou la demande a expiré).';
+          return pending.action();
+        },
+      },
+      {
+        name: 'memory',
+        aliases: ['memoire', 'mémoire'],
+        minRole: 'OWNER',
+        needsBot: false,
+        usage: '!memory',
+        description: 'Résumé de la mémoire et des stratégies apprises',
+        run(ctx) {
+          const { memory } = ctx.services;
+          const s = memory.summary();
+          const best = memory.bestStrategy('collect:diamond');
+          const base = memory.getLocation('base');
+          const parts = [
+            `${s.players} joueurs`,
+            `${s.locations} lieux`,
+            `${s.tasksLearned} tâches apprises`,
+            base ? `base ${formatPosition(base)}` : 'pas de base',
+          ];
+          if (best) parts.push(`diamant : ${Math.round(best.successRate * 100)}% réussite sur ${best.runs} essais`);
+          return `Mémoire : ${parts.join(' | ')}`;
+        },
+      },
+      {
         name: 'quit',
         needsBot: false,
         aliases: ['quitter'],

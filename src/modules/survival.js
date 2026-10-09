@@ -13,6 +13,38 @@ const BED_SEARCH_DISTANCE = 24;
 const NIGHT_START = 12541;
 const NIGHT_END = 23458;
 
+function isNight(mc) {
+  const t = mc.time && mc.time.timeOfDay;
+  return typeof t === 'number' && t >= NIGHT_START && t <= NIGHT_END;
+}
+
+function hostilesNear(mc, radius = 16) {
+  return Object.values(mc.entities).some(
+    (e) => e && e.type === 'hostile' && e.position && mc.entity.position.distanceTo(e.position) < radius
+  );
+}
+
+/**
+ * Va dormir dans le lit le plus proche. Renvoie un message (jamais d'exception silencieuse).
+ * @param {{force?: boolean}} opts  force=true ignore l'heure et les monstres
+ */
+function sleepIfPossible(mc, services, { force = false } = {}) {
+  const { tasks, log, say } = services;
+  if (mc.isSleeping) return 'Je dors déjà.';
+  if (tasks.describe().active) return `Je suis occupé : ${tasks.describe().name}.`;
+  if (!force && (!isNight(mc) || hostilesNear(mc))) return null;
+  const bed = mc.findBlock({ matching: (b) => mc.isABed(b), maxDistance: BED_SEARCH_DISTANCE });
+  if (!bed) return force ? 'Je ne trouve pas de lit à proximité.' : null;
+  tasks.start('dormir', async (signal) => {
+    await mc.pathfinder.goto(new GoalNear(bed.position.x, bed.position.y, bed.position.z, 1));
+    if (signal.aborted) throw new Error('annulé');
+    await mc.sleep(bed);
+    log.action('Je dors.');
+    say('Bonne nuit !');
+  }).catch((err) => log.warn(`Sommeil : ${err.message}`));
+  return 'Je vais dormir.';
+}
+
 function createSurvivalModule() {
   return {
     name: 'survival',
@@ -60,37 +92,29 @@ function createSurvivalModule() {
       cleanups.push(() => mc.removeListener('death', onDeath));
 
       if (behavior.autoSleep) {
-        const timer = setInterval(() => trySleep(), SLEEP_CHECK_MS);
+        const timer = setInterval(() => {
+          if (!tasks.describe().active) sleepIfPossible(mc, services);
+        }, SLEEP_CHECK_MS);
         cleanups.push(() => clearInterval(timer));
-      }
-
-      function isNight() {
-        const t = mc.time && mc.time.timeOfDay;
-        return typeof t === 'number' && t >= NIGHT_START && t <= NIGHT_END;
-      }
-
-      function hostilesNear() {
-        return Object.values(mc.entities).some(
-          (e) => e && e.type === 'hostile' && e.position && mc.entity.position.distanceTo(e.position) < 16
-        );
-      }
-
-      function trySleep() {
-        if (mc.isSleeping || tasks.describe().active || !isNight() || hostilesNear()) return;
-        const bed = mc.findBlock({ matching: (b) => mc.isABed(b), maxDistance: BED_SEARCH_DISTANCE });
-        if (!bed) return;
-        tasks.start('dormir', async () => {
-          await mc.pathfinder.goto(new GoalNear(bed.position.x, bed.position.y, bed.position.z, 1));
-          await mc.sleep(bed);
-          log.action('Je dors.');
-        }).catch((err) => log.warn(`Sommeil : ${err.message}`));
       }
 
       return () => cleanups.forEach((fn) => fn());
     },
 
-    commands: [],
+    commands: [
+      {
+        name: 'sleep',
+        aliases: ['dormir'],
+        minRole: 'TRUSTED',
+        action: true,
+        usage: '!sleep',
+        description: 'Va dormir dans le lit le plus proche',
+        run(ctx) {
+          return sleepIfPossible(ctx.bot, ctx.services, { force: true });
+        },
+      },
+    ],
   };
 }
 
-module.exports = { createSurvivalModule };
+module.exports = { createSurvivalModule, sleepIfPossible };

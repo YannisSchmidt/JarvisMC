@@ -1,7 +1,7 @@
 'use strict';
 /**
  * Test sur un VRAI serveur Minecraft. Ignoré sauf si JARVIS_TEST_SERVER est défini :
- *   JARVIS_TEST_SERVER=localhost:25565 JARVIS_TEST_VERSION=1.21.11 npm run test:integration
+ *   JARVIS_TEST_SERVER=localhost:25565 JARVIS_TEST_VERSION=1.21.1 npm run test:integration
  * Le serveur doit être en mode offline (auth "offline").
  */
 const test = require('node:test');
@@ -24,7 +24,7 @@ test('connexion, spawn et commande !status sur serveur réel', { skip, timeout: 
       host,
       port: Number(portStr || 25565),
       username: process.env.JARVIS_TEST_USERNAME || 'JarvisTest',
-      version: process.env.JARVIS_TEST_VERSION || '1.21.11',
+      version: process.env.JARVIS_TEST_VERSION || '1.21.1',
       auth: 'offline',
     },
     behavior: { autoReconnect: false, owner: 'nobody' },

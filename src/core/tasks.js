@@ -69,15 +69,15 @@ class TaskManager {
     return { active: true, id, name, status, startedAt };
   }
 
+  /** Copie sans l'AbortController (non sérialisable, interne). */
   _snapshot(task) {
-    const { controller, ...rest } = task;
-    return rest;
+    return { id: task.id, name: task.name, status: task.status, startedAt: task.startedAt, endedAt: task.endedAt, error: task.error };
   }
 
   _notify() {
     try {
       this.onChange(this.describe());
-    } catch (_) {
+    } catch {
       /* les observateurs ne doivent jamais casser le gestionnaire */
     }
   }

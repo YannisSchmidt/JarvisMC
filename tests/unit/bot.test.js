@@ -11,6 +11,7 @@ const { createGeneralModule } = require('../../src/modules/general');
 const { normalizeConfig } = require('../../src/config');
 const { resolveVersion } = require('../../src/adapters/version');
 const { configureLogger } = require('../../src/core/logger');
+const { MemoryStore } = require('../../src/memory/store');
 
 configureLogger({ level: 'ERROR', file: null });
 
@@ -35,8 +36,9 @@ function makeBot({ behavior = {}, bots = [] } = {}) {
   });
   const jarvis = new JarvisBot({
     config,
-    versionProfile: resolveVersion('1.21.11'),
+    versionProfile: resolveVersion('1.21.1'),
     modules: [createGeneralModule()],
+    memory: new MemoryStore(null),
     createBot: () => {
       const mc = fakeMc();
       bots.push(mc);
@@ -134,4 +136,52 @@ test('!help ne liste que les commandes accessibles au rôle', async () => {
   const reply = mc.chatLog.join(' ');
   assert.match(reply, /!status/);
   assert.doesNotMatch(reply, /!quit/);
+});
+
+test('langage naturel : phrase du propriétaire → commande exécutée et annoncée', async () => {
+  const { createGatheringModule } = require('../../src/modules/gathering');
+  const { Vec3 } = require('vec3');
+  const bots = [];
+  const config = normalizeConfig({ behavior: { owner: 'Yannis' }, logging: { level: 'ERROR', file: null } });
+  const jarvis = new JarvisBot({
+    config,
+    versionProfile: resolveVersion('1.21.1'),
+    modules: [createGeneralModule(), createGatheringModule()],
+    memory: new MemoryStore(null),
+    createBot: () => {
+      const mc = fakeMc();
+      mc.entity.position = new Vec3(0, 64, 0);
+      mc.findBlock = () => null;
+      bots.push(mc);
+      return mc;
+    },
+  });
+  jarvis.start();
+  bots[0].emit('spawn');
+  bots[0].emit('chat', 'Yannis', 'Ramène-moi 3 stacks de fer');
+  await tick();
+  assert.ok(bots[0].chatLog.some((m) => m.includes('Je pars récolter 192')), bots[0].chatLog.join(' / '));
+  jarvis.stopAll();
+});
+
+test('langage naturel : fonctionnalité absente → réponse honnête, rien n\'est lancé', async () => {
+  const bots = [];
+  const { jarvis } = makeBot({ bots });
+  jarvis.config.behavior.owner = 'Yannis';
+  jarvis.start();
+  bots[0].emit('spawn');
+  bots[0].emit('chat', 'Yannis', 'Fais une ferme à fer');
+  await tick();
+  assert.match(bots[0].chatLog.join(' '), /pas encore/);
+  assert.equal(jarvis.tasks.describe().active, false);
+});
+
+test('langage naturel : un joueur simple n\'obtient pas d\'exécution', async () => {
+  const bots = [];
+  const { jarvis } = makeBot({ bots });
+  jarvis.start();
+  bots[0].emit('spawn');
+  bots[0].emit('chat', 'Bob', 'va chercher du bois');
+  await tick();
+  assert.equal(bots[0].chatLog.length, 0);
 });

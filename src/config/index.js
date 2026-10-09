@@ -7,7 +7,7 @@ const fs = require('fs');
 const path = require('path');
 
 const DEFAULTS = {
-  bot: { username: 'BestFriendBot', host: 'localhost', port: 25565, version: '1.21.11', auth: 'offline' },
+  bot: { username: 'BestFriendBot', host: 'localhost', port: 25565, version: '1.21.1', auth: 'offline' },
   behavior: {
     owner: null,
     trusted: [],
@@ -19,9 +19,11 @@ const DEFAULTS = {
     autoSleep: true,
     autoRespawn: true,
     lowHealthAlert: 6,
+    autoDefend: true,
   },
   ai: { enabled: false, provider: 'local', model: null },
   logging: { level: 'INFO', file: 'logs/jarvismc.log' },
+  memory: { file: 'data/memory.json' },
 };
 
 const PLACEHOLDERS = new Set(['PLAYER_NAME', 'MODEL_NAME', '']);
@@ -53,7 +55,8 @@ function deepMerge(base, override) {
 /** Valide une configuration fusionnée. Retourne la liste des problèmes (vide si OK). */
 function validate(cfg) {
   const problems = [];
-  const { bot, behavior, ai, logging } = cfg;
+  const { bot, behavior, ai, logging, memory } = cfg;
+  if (memory.file !== null && typeof memory.file !== 'string') problems.push('memory.file doit être un chemin ou null');
 
   if (typeof bot.username !== 'string' || !USERNAME_RE.test(bot.username)) {
     problems.push('bot.username doit faire 3 à 16 caractères alphanumériques ou "_"');

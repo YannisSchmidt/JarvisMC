@@ -87,11 +87,13 @@ test('découpage des messages pour le chat', () => {
 });
 
 test('CLI : raccourcis sans "!"', () => {
-  assert.equal(toCommandLine('status'), '!status');
-  assert.equal(toCommandLine('goto 1 2 3'), '!goto 1 2 3');
-  assert.equal(toCommandLine('!help'), '!help');
-  assert.equal(toCommandLine('blabla'), null);
-  assert.equal(toCommandLine('   '), null);
+  const names = new Set(['status', 'goto', 'craft', 'help']);
+  assert.equal(toCommandLine('status', names), '!status');
+  assert.equal(toCommandLine('goto 1 2 3', names), '!goto 1 2 3');
+  assert.equal(toCommandLine('craft iron_pickaxe 1', names), '!craft iron_pickaxe 1');
+  assert.equal(toCommandLine('!help', names), '!help');
+  assert.equal(toCommandLine('blabla', names), null);
+  assert.equal(toCommandLine('   ', names), null);
 });
 
 test('coordonnées de !goto', () => {

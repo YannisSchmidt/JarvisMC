@@ -7,9 +7,23 @@ const { createMovementModule } = require('./movement');
 const { createInventoryModule } = require('./inventory');
 const { createSurvivalModule } = require('./survival');
 const { createGeneralModule } = require('./general');
+const { createGatheringModule } = require('./gathering');
+const { createCraftingModule } = require('./crafting');
+const { createCombatModule } = require('./combat');
+const { createExplorationModule } = require('./exploration');
 
+/** L'ordre compte : gathering doit s'attacher avant crafting (services.gather). */
 function createModules() {
-  return [createGeneralModule(), createMovementModule(), createInventoryModule(), createSurvivalModule()];
+  return [
+    createGeneralModule(),
+    createMovementModule(),
+    createInventoryModule(),
+    createSurvivalModule(),
+    createGatheringModule(),
+    createCraftingModule(),
+    createCombatModule(),
+    createExplorationModule(),
+  ];
 }
 
 module.exports = { createModules };

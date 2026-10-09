@@ -35,8 +35,8 @@ function boot({ configPath } = {}) {
   } else {
     createLogger('AI').info('Désactivée — mode AI OFFLINE (commandes "!" uniquement)');
   }
-  createLogger('MEMORY').info('Mémoire courte initialisée (mémoire longue : pas encore implémentée)');
-  createLogger('PLANNER').info('Non disponible (phase 3) — tâches simples uniquement');
+  createLogger('MEMORY').info(`Mémoire longue : ${config.memory.file || 'volatile (aucun fichier)'}`);
+  createLogger('PLANNER').info('Planificateur de craft prêt (recettes de la version ' + versionProfile.minecraftVersion + ')');
 
   const modules = createModules();
   for (const m of modules) createLogger(m.name.toUpperCase()).info('Ready');

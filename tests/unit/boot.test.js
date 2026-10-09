@@ -16,9 +16,9 @@ function writeCfg(obj) {
 
 test('boot prépare modules et profil de version avant connexion', () => {
   const prepared = boot({
-    configPath: writeCfg({ bot: { version: '1.21.11' }, logging: { level: 'ERROR', file: null } }),
+    configPath: writeCfg({ bot: { version: '1.21.1' }, logging: { level: 'ERROR', file: null } }),
   });
-  assert.equal(prepared.versionProfile.minecraftVersion, '1.21.11');
+  assert.equal(prepared.versionProfile.minecraftVersion, '1.21.1');
   const names = prepared.modules.map((m) => m.name);
   for (const expected of ['general', 'movement', 'inventory', 'survival']) assert.ok(names.includes(expected));
 });

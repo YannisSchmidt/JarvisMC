@@ -3,7 +3,7 @@
     "username": "BestFriendBot",
     "host": "localhost",
     "port": 25565,
-    "version": "1.21.11",
+    "version": "1.21.1",
     "auth": "offline"
   },
   "behavior": {
@@ -16,7 +16,8 @@
     "autoEat": true,
     "autoSleep": true,
     "autoRespawn": true,
-    "lowHealthAlert": 6
+    "lowHealthAlert": 6,
+    "autoDefend": true
   },
   "ai": {
     "enabled": false,
@@ -26,5 +27,8 @@
   "logging": {
     "level": "INFO",
     "file": "logs/jarvismc.log"
+  },
+  "memory": {
+    "file": "data/memory.json"
   }
 }
